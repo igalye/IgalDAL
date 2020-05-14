@@ -1,0 +1,5 @@
+D:\OneDrive\Programming\IgalDAL\IgalDAL\bin\Debug\IgalDAL.dll
+D:\OneDrive\Programming\IgalDAL\IgalDAL\bin\Debug\IgalDAL.pdb
+D:\OneDrive\Programming\IgalDAL\IgalDAL\obj\Debug\IgalDAL.csprojAssemblyReference.cache
+D:\OneDrive\Programming\IgalDAL\IgalDAL\obj\Debug\IgalDAL.dll
+D:\OneDrive\Programming\IgalDAL\IgalDAL\obj\Debug\IgalDAL.pdb
