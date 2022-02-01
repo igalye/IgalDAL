@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Data.SqlClient;
+using System.Text.RegularExpressions;
 
 namespace IgalDAL
 {
@@ -38,6 +39,48 @@ namespace IgalDAL
         }
     }
 
+    //igal 22/1/20
+    public class SqlFieldType
+    {
+        private string _sqlFieldLength = "";
+        
+        public string sqlFieldType { get; set; }
+
+    /// <summary>
+        /// only numbers, "," or "max" are allowed
+        /// </summary>
+        public string sqlFieldLength
+        {
+            get { return _sqlFieldLength; }
+            set
+            {
+                if (!(value == "max" || MatchForPrecision(value)))
+                {
+                    throw new Exception("only numbers, ',' or 'max' values are allowed ");
+                }
+                else
+                    _sqlFieldLength = value;
+            }
+        }
+
+        public override string ToString()
+        {
+            string sPrecision = "";
+            if (_sqlFieldLength.Trim() != "")
+                sPrecision = "(" + _sqlFieldLength + ")";
+            return sqlFieldType + sPrecision;
+        }
+
+        private bool MatchForPrecision(string inputstring)
+        {
+            Regex regex = new Regex(@"[0-9,]");
+            MatchCollection matches = regex.Matches(inputstring);
+
+            return matches.Count.Equals(inputstring.Length);
+        }
+    }
+    
+
     /// <summary>
     /// Field with name, value and type (system style)
     /// </summary>
@@ -45,6 +88,10 @@ namespace IgalDAL
     {
         private string _AssignSign;
         public Type FieldType { get; set; }
+
+        //igal 22/1/20
+        public SqlFieldType sqlFieldType
+        { get; set; }
 
         public clsParamField()
         {   //28-1-19
@@ -59,6 +106,9 @@ namespace IgalDAL
 
         public clsParamField(string _Name, string _Value, Type _Type):this(_Name,_Value)
         {            FieldType = _Type;        }
+
+        public clsParamField(string _Name, string _Value, SqlFieldType _sqlFieldType) : this(_Name, _Value)
+        { sqlFieldType = _sqlFieldType; }
 
         public override string ToString()
         {
@@ -95,6 +145,7 @@ namespace IgalDAL
                     case ">":
                     case ">=":
                     case "like":
+                    case "in":
                         _AssignSign = value;
                         break;
                     default:
@@ -165,6 +216,22 @@ namespace IgalDAL
     {
         private Dictionary<string, clsParamField> mCol;
 
+        public clsParamField Add(String sqlFieldName, SqlFieldType sqlFieldType, String SqlFieldValue, string sKey = "")
+        {
+            //check if there's already a member with this key
+            if (sKey != "" && mCol.ContainsKey(sKey))
+                return null;
+            //create a new object
+            clsParamField objNewMember = new clsParamField(sqlFieldName, SqlFieldValue, sqlFieldType);
+
+            if (sKey.Trim() == "")
+                mCol.Add("i" + mCol.Count, objNewMember);
+            else
+                mCol.Add(sKey, objNewMember);
+
+            return objNewMember;
+        }
+
         public clsParamField Add(String sqlFieldName, String SqlFieldValue, string sKey="" ) 
         {
             //check if there's already a member with this key
@@ -204,7 +271,18 @@ namespace IgalDAL
         public clsParamField GetItemByFieldName(string FieldName)
         {
             clsParamField tmp = null;
+            try
+            {
             tmp = mCol.First(p => p.Value.FieldName == FieldName).Value;
+            }
+            catch (Exception ex)
+            {
+                if (ex.HResult == -2146233079) //Sequence contains no matching element - didn't find an element
+                    return null;
+                else
+                    throw ex;
+            }
+            
             return tmp;
         }
 
